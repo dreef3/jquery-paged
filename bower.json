@@ -1,0 +1,18 @@
+{
+	"name": "jquery-paged",
+	"version": "0.0.1",
+	"homepage": "https://github.com/dreef3/jquery-paged",
+	"authors": [
+		"Andrey Ermakov <dreef3@gmail.com>"
+	],
+	"description": "JQuery plugin for paged output of data with extra goodies",
+	"main": "src/jquery.paged.js",
+	"keywords": [
+		"jquery",
+		"plugin",
+		"paginate",
+		"jquery-plugin",
+		"jquery-paged"
+	],
+	"license": "Apache"
+}

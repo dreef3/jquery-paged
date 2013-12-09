@@ -1,0 +1,23 @@
+{
+  "name": "jquery-paged",
+  "title": "jQuery Paged plugin",
+  "description": "JQuery plugin to display paged data with extra goodies",
+  "author": "Andrey Ermakov",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dreef3/jquery-paged.git"
+  },
+  "homepage": "https://github.com/dreef3/jquery-paged",
+  "version": "0.0.1",
+  "devDependencies": {
+    "grunt": "~0.4.1",
+    "grunt-cli": "~0.1.7",
+    "grunt-contrib-jshint": "~0.4.3",
+    "grunt-contrib-concat": "~0.3.0",
+    "grunt-contrib-uglify": "~0.2.0",
+    "grunt-contrib-watch": "~0.5.3"
+  },
+  "scripts": {
+    "test": "grunt travis --verbose"
+  }
+}

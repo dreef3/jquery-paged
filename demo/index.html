@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>jQuery Boilerplate</title>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.5.2/underscore-min.js"></script>
+    <script src="jquery.ajax.fake.js"></script>
+    <script src="../src/jquery.paged.js"></script>
+</head>
+<body>
+<div id="element"></div>
+<script>
+    $(function () {
+        $.ajax.fake.registerWebservice('http://localhost:8282/booking/all/', function (data) {
+            console.log("Fake data: %s", data);
+            return {
+                meetings: [
+                    {id: 1, name: 'Andrey', time: '9:00'},
+                    {id: 1, name: 'Andrey', time: '9:00'},
+                    {id: 1, name: 'Andrey', time: '9:00'}
+
+                ]
+            };
+        });
+
+        $('#element').paged({
+            url: 'http://localhost:8282/booking/all/',
+            ajax: {
+                fake: true
+            },
+            template: '<ul>' +
+                    '<% _.each(meetings, function(meeting) { %>' +
+                    '<li><%=meeting.name%> - <%=meeting.time%></li>' +
+                    '<% }); %>' +
+                    '</ul>'
+        });
+    });
+</script>
+
+</body>
+</html>
