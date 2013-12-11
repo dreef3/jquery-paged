@@ -2,6 +2,8 @@
 <html>
 <head>
     <title>jQuery Boilerplate</title>
+    <link href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="paged.css" />
     <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.5.2/underscore-min.js"></script>
     <script src="jquery.ajax.fake.js"></script>
@@ -9,30 +11,44 @@
 </head>
 <body>
 <div id="element"></div>
+<div id="local-data"></div>
 <script>
     $(function () {
-        $.ajax.fake.registerWebservice('http://localhost:8282/booking/all/', function (data) {
-            console.log("Fake data: %s", data);
-            return {
-                meetings: [
-                    {id: 1, name: 'Andrey', time: '9:00'},
-                    {id: 1, name: 'Andrey', time: '9:00'},
-                    {id: 1, name: 'Andrey', time: '9:00'}
+        var fakeData = [];
+        for (var i = 0; i < 50; i++) {
+            fakeData[i] = {
+                id: i, name: 'Mister Twister ' + i,  time: '9:' + (i < 10 ? '0' + i : i)
+            }
+        }
 
-                ]
+        $.ajax.fake.registerWebservice('http://localhost:8282/booking/all/', function (data) {
+            console.log("Request from Paged: %s", JSON.stringify(data, null, 4));
+            return {
+                total: fakeData.length,
+                meetings: fakeData.slice(data.offset, data.offset + data.limit)
             };
         });
 
+        var template = '<ul class="paged-items-list">' +
+                '<% _.each(meetings, function(meeting) { %>' +
+                '<li><i class="fa fa-check-square-o"></i><%=meeting.name%> - <%=meeting.time%></li>' +
+                '<% }); %>' +
+                '</ul>';
+
         $('#element').paged({
-            url: 'http://localhost:8282/booking/all/',
             ajax: {
+                url: 'http://localhost:8282/booking/all/',
                 fake: true
             },
-            template: '<ul>' +
-                    '<% _.each(meetings, function(meeting) { %>' +
-                    '<li><%=meeting.name%> - <%=meeting.time%></li>' +
-                    '<% }); %>' +
-                    '</ul>'
+            template: template
+        });
+
+        $('#local-data').paged({
+            data: {
+                root: 'meetings',
+                meetings: fakeData
+            },
+            template: template
         });
     });
 </script>
