@@ -1,15 +1,50 @@
 JQuery Paged
 ============
 
-JQuery plugin for paged output of data with extra goodies
+JQuery plugin for paged output of data with extra goodies. Inspired by [CLNDR](https://github.com/kylestetz/CLNDR) JQuery plugin which uses the template approach to display calendar. Bootstrapped with [JQuery Boilerplate](https://github.com/jquery-boilerplate/jquery-boilerplate/).
 
-Inspiration
------------
+Dependencies
+------------
 
-Inspired by [CLNDR](https://github.com/kylestetz/CLNDR) JQuery plugin which uses the template approach to display calendar. Bootstrapped with [JQuery Boilerplate](https://github.com/jquery-boilerplate/jquery-boilerplate/).
+The required dependency is [JQuery](http://jquery.com/download/). Default pagination template uses [Font Awesome](http://fontawesome.io/icons/) arrows and [Underscore.js](http://underscorejs.org/#template) templates, but this can be altered.
+
+Usage
+============
+
+First define a template for displaying your items:
+
+```javascript
+<script type="text/html" id="paged-items-template">
+    <ul class="paged-items-list">
+        <% _.each(items, function(item) { %>
+            <li>
+                <%=item.name%> - <%=item.time%>
+            </li>
+        <% }); %>
+    </ul>
+</script>
+```
+
+Next step is to call Paged on arbitrary element:
+
+```javascript
+<div id="#element"></div>
+<script>
+$(function () {
+    $('#element').paged({
+        ajax: {
+            url: 'http://localhost:8282/booking/all/',
+        },
+        template: $('#paged-items-template').html()
+    });
+});
+</script>
+```
+
+The plugin would perform a request to the server and display data using default pagination inside `#element` container.
 
 Options
--------
+=======
 
 A variety of default options is available:
 
@@ -25,7 +60,8 @@ defaults = {
         afterRender: null,
         // Called before sending the AJAX request. JQuery.ajax() settings object is passed here.
         beforeLoad: null,
-        // Called after the AJAX response is acquired. Passed data object with extras: currentPage, totalPages, isLastPage
+        // Called after the AJAX response is acquired. Passed data object with extras:
+        // currentPage, totalPages, isLastPage
         afterLoad: null,
         // Called in case of AJAX request failure. Error object is passed here.
         loadFail: null
@@ -87,4 +123,74 @@ defaults = {
     // Total amount of numbers. Can be passed in AJAX response in field 'total'. For local data source may be computed automatically.
     total: null
 }
+```
+
+Access instance methods
+-----------------------
+
+To manipulate with plugin's instance use the same approach as in JQuery UI widgets:
+
+```javascript
+var $el = $('#element');
+el.paged({...});
+
+// Move one page forward:
+el.paged('forward');
+// One back:
+el.paged('back');
+// To the first page:
+el.paged('first');
+// To the last one:
+el.paged('last');
+// To page with number 24:
+el.paged('go', 24);
+// Reload the current page contents:
+el.paged('reload');
+```
+
+Alter rendering engine
+----------------------
+
+To achieve this you need to provide a custom rendering function:
+
+```javascript
+var precompiled = customTemplateEngine.template($('#paged-items-template').html());
+var precompiledPagination = customTemplateEngine.template($('#paged-pagination-template').html());
+
+$(function () {
+    $('#element').paged({
+        ajax: {
+            url: 'http://localhost:8282/booking/all/',
+        },
+        render: function(data) {
+            precompiled(data);
+        },
+        pages: {
+            render: function(data) {
+                precompiledPagination(data);
+            }
+        }
+    });
+});
+```
+
+Or you can pass a general templating function and two templates:
+
+```javascript
+var itemsTemplate = $('#paged-items-template').html();
+var paginationTemplate = $('#paged-pagination-template').html();
+
+$(function () {
+    $('#element').paged({
+        ajax: {
+            url: 'http://localhost:8282/booking/all/',
+        },
+        // Must accepts two arguments: template, data
+        render: customTemplateFunction,
+        template: itemsTemplate,
+        pages: {
+            template: paginationTemplate
+        }
+    });
+});
 ```

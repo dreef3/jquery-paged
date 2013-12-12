@@ -27,10 +27,14 @@
             },
             // CSS targets to bind pagination events.
             targets: {
-                // Previous button.
+                // First page button
+                first: '.paged-first',
+                // Previous page button.
                 previous: '.paged-previous',
-                // Next button.
+                // Next page button.
                 next: '.paged-next',
+                // Last page button
+                last: '.paged-last',
                 // Specific page. Note: page elements must contain data-page attribute with current page number.
                 page: '.paged-page-before, .paged-page-after'
             },
@@ -51,6 +55,7 @@
                 // Pagination template. Passed variables: current, pagesBefore, pagesAfter, isLast, totalPages
                 template: "<ul class='paged-pager-list'>" +
                     "<% if (current > 1) { %>" +
+                    "<li class='paged-first paged-control'><a href='#'><i class='fa fa-arrow-circle-left'></i></a></li>" +
                     "<li class='paged-previous paged-control'><a href='#'><i class='fa fa-long-arrow-left'></i></a></li>" +
                     "<% for(var i = pagesBefore; i > 0; i--) { %>" +
                     "<li class='paged-page-before' data-page='<%=current - i%>'><a href='#'><%=current - i%></a></li>" +
@@ -64,6 +69,7 @@
                     "<li class='paged-page-after' data-page='<%=current + i%>'><a href='#'><%=current + i%></a></li>" +
                     "<% } %>" +
                     "<li class='paged-next paged-control'><a href='#'><i class='fa fa-long-arrow-right'></i></a></li>" +
+                    "<li class='paged-last paged-control'><a href='#'><i class='fa fa-arrow-circle-right'></i></a></li>" +
                     "<% } else { %>" +
                     "<li class='paged-control'><a href='#'><i class='fa fa-dot-circle-o'></i></a></li>" +
                     "<% } %>" +
@@ -75,11 +81,12 @@
                 // If no custom element set, position of pagination inside Paged container. Possible values: before, after.
                 position: 'after'
             },
-            // Items per page
+            // Items per page. You may set this to null and return limit from server in field 'limit'
             limit: 10,
-            // First item number
+            // Initial offset (must be a multiple of limit)
             offset: 0,
-            // Total amount of numbers. Can be passed in AJAX response in field 'total'. For local data source may be computed automatically.
+            // Total amount of numbers. If not set, would be gathered from 'total' field in server's response.
+            // For local data source would be computed automatically.
             total: null
         }
 
@@ -106,14 +113,21 @@
 
             this.$element.html('<div class="paged-items"></div>');
             this.$container = $('.paged-items', this.element);
-            if (!this.settings.total && this.settings.data) {
+            this._total = this.settings.total;
+            this._offset = this.settings.offset;
+            this._limit = this.settings.limit;
+            if (!this._limit && this.settings.data) {
+                throw new Error('Page limit must be set when using local data source!');
+            }
+
+            if (!this._total && this.settings.data) {
                 if (this.settings.data.root) {
-                    this.settings.total = this.settings.data[this.settings.data.root].length;
+                    this._total = this.settings.data[this.settings.data.root].length;
                 } else {
-                    this.settings.total = this.settings.data.length;
+                    this._total = this.settings.data.length;
                 }
             }
-            if (this.settings.total && this.settings.total > this.settings.limit) {
+            if (this._total && this._limit && this._total > this._limit) {
                 this._initPager();
             } else {
                 this.$pager = null;
@@ -127,8 +141,9 @@
                 this._compiledUrl = _.template(this.settings.ajax.url);
             }
 
-            this.settings.offset -= this.settings.limit;
-            this.go(1);
+
+            var firstPage = (this._offset && this._limit) ? Math.floor(this._offset / this._limit) : 1;
+            this.go(firstPage);
         },
 
         _initPager: function () {
@@ -148,27 +163,34 @@
                 this.$pager = $('.paged-pager', this.element);
             }
             if (!$.isFunction(this.settings.pages.render)) {
-                this.settings.pages.render = null;
-                if (typeof _ === 'undefined') {
-                    throw new Error("Underscore was not found. Please include underscore.js OR provide a custom pages.render function.");
-                }
-                else {
-                    this._compiledPagerTemplate = _.template(this.settings.pages.template);
+                if (this.settings.pages.template && this.settings.render) {
+                    this.settings.pages.render = this.settings.render;
+                } else {
+                    this.settings.pages.render = null;
+                    if (typeof _ === 'undefined') {
+                        throw new Error("Underscore was not found. Please include underscore.js OR provide a custom pages.render function.");
+                    }
+                    else {
+                        this._compiledPagerTemplate = _.template(this.settings.pages.template);
+                    }
                 }
             }
         },
 
-        _evalPages: function (offset, limit, total) {
-            if (!this.settings.total || total) {
-                this.settings.total = total;
-                this._totalPages = this.settings.total / this.settings.limit;
-                if (this.settings.total % this.settings.limit > 0) {
+        _evalPages: function (limit, total) {
+            if (!this._limit) {
+                this._limit = limit;
+            }
+            if (!this._total) {
+                this._total = total;
+                this._totalPages = Math.floor(this._total / this._limit);
+                if (this._total % this._limit > 0) {
                     this._totalPages++;
                 }
             }
 
-            this._currentPage = offset / limit + 1;
-            this._isLastPage = offset + limit === this.settings.total;
+            this._currentPage = this._offset / this._limit + 1;
+            this._isLastPage = this._offset + limit === this._total;
         },
 
         _disableNavigation: function (disable) {
@@ -182,16 +204,18 @@
         },
 
         go: function (page) {
-            this.settings.offset = this.settings.limit * (page - 1);
-            var limit = this.settings.limit;
-            if (this.settings.total && this.settings.offset + limit > this.settings.total) {
-                limit = this.settings.total - this.settings.offset;
+            var limit = this._limit;
+            if (limit) {
+                this._offset = this._limit * (page - 1);
+                if (this._total && this._offset + limit > this._total) {
+                    limit = this._total - this._offset;
+                }
             }
 
             if (this.settings.data) {
-                this._load(this.settings.offset, limit)
+                this._load(this._offset, limit)
             } else {
-                this._loadRemote(this.settings.offset, limit)
+                this._loadRemote(this._offset, limit)
             }
         },
 
@@ -199,9 +223,13 @@
             this.go(this._currentPage - 1);
         },
 
+        reload: function () {
+            this.go(this._currentPage);
+        },
+
         _load: function (offset, limit, data) {
-            this._evalPages(offset, limit, data ? data['total'] : this.settings.total);
-            if (!this.$pager && this.settings.total > this.settings.limit) {
+            this._evalPages(limit ? limit : data['limit'], data ? data['total'] : this._total);
+            if (!this.$pager && this._total > this._limit) {
                 this._initPager();
             }
 
@@ -215,11 +243,14 @@
                     items = this.settings.data.slice(offset, offset + limit)
                 }
             }
+
+            this._afterLoad(items);
+
             this._render(items);
             this._renderPager();
 
-            if ($.isFunction(this.settings.afterRender)) {
-                this.settings.afterRender().call(this, this.element, data);
+            if ($.isFunction(this.settings.events.afterRender)) {
+                this.settings.events.afterRender.call(this, this.element, data);
             }
         },
 
@@ -231,7 +262,7 @@
 
         _afterLoad: function (data) {
             if (this.settings.events.afterLoad) {
-                this.settings.events.afterLoad.call(this, $.extend(true, {}, data, {
+                this.settings.events.afterLoad.call(this, $.extend(true, data, {
                     currentPage: this._currentPage,
                     totalPages: this._totalPages,
                     isLastPage: this._isLastPage
@@ -244,11 +275,11 @@
             var url = this._compiledUrl({offset: offset, limit: limit});
 
             var ajaxSettings = $.extend(true, {}, this.settings.ajax, {
-                url: this._compiledUrl(offset, limit),
+                url: url,
                 data: {
                     offset: offset,
                     limit: limit,
-                    total: this.settings.total
+                    total: this._total
                 }
             });
 
@@ -256,7 +287,6 @@
             $.ajax(ajaxSettings)
                 .done((function onLoad(data) {
                     this._load(offset, limit, data);
-                    this._afterLoad(data);
                     this._disableNavigation(false);
                 }).bind(this))
                 .fail((function onError(xhr, status, error) {
@@ -293,7 +323,11 @@
 
             this.$pager.children().remove();
             if (this.settings.pages.render) {
-                this.$pager.html(this.settings.pages.render.apply(this, [data]));
+                var args = [data];
+                if (this.settings.pages.template) {
+                    args.unshift(this.settings.pages.template);
+                }
+                this.$pager.html(this.settings.pages.render.apply(this, args));
             } else {
                 this.$pager.html(this._compiledPagerTemplate(data))
             }
@@ -332,7 +366,11 @@
             this.$container.children().remove();
 
             if (this.settings.render) {
-                this.$container.html(this.settings.render.apply(this, [data]));
+                var args = [data];
+                if (this.settings.template) {
+                    args.unshift(this.settings.template);
+                }
+                this.$container.html(this.settings.render.apply(this, args));
             } else {
                 this.$container.html(this._compiledTemplate(data))
             }
@@ -341,7 +379,10 @@
 
     $.fn[ pluginName ] = function (options) {
         return this.each(function () {
-            if (!$.data(this, "plugin_" + pluginName)) {
+            var plugin = $.data(this, "plugin_" + pluginName);
+            if (plugin && $.isArray(options) && $.isFunction(plugin[options[0]])) {
+                plugin[options[0]].call(plugin, options.slice(1))
+            } else {
                 $.data(this, "plugin_" + pluginName, new Plugin(this, options));
             }
         });
