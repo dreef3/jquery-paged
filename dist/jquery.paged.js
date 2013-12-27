@@ -7,7 +7,8 @@
  *  Under Apache License
  */
 ;
-(function ($, window, document, undefined) {
+(function ($, window, document, _, undefined) {
+    "use strict";
     var pluginName = "paged",
         defaults = {
             // Custom rendering function. Use this to substitute default Underscore template engine.
@@ -16,6 +17,8 @@
             template: "<ul><li>Nothing here yet</li></ul>",
             // Event handlers
             events: {
+                beforeRender: null,
+                beforePaginationRender: null,
                 // Called when both items and pagination are rendered
                 afterRender: null,
                 // Called before sending the AJAX request. JQuery.ajax() settings object is passed here.
@@ -88,14 +91,12 @@
             // Total amount of numbers. If not set, would be gathered from 'total' field in server's response.
             // For local data source would be computed automatically.
             total: null
-        }
+        };
 
     function Plugin(element, options) {
         this.element = element;
         this.$element = $(element);
         this.settings = $.extend(true, {}, defaults, options);
-        this._defaults = defaults;
-        this._name = pluginName;
         this.init();
     }
 
@@ -103,10 +104,9 @@
         init: function () {
             if (!$.isFunction(this.settings.render)) {
                 this.settings.render = null;
-                if (typeof _ === 'undefined') {
+                if (_ === undefined) {
                     throw new Error("Underscore was not found. Please include underscore.js OR provide a custom render function.");
-                }
-                else {
+                } else {
                     this._compiledTemplate = _.template(this.settings.template);
                 }
             }
@@ -151,7 +151,7 @@
                 this.$pager = $(this.settings.pages.el);
                 this.$pager.each(function () {
                     $(this).addClass('.paged-pager');
-                })
+                });
             } else {
                 if (this.settings.pages.position === 'before') {
                     this.$element.prepend('<div class="paged-pager"></div>');
@@ -167,10 +167,9 @@
                     this.settings.pages.render = this.settings.render;
                 } else {
                     this.settings.pages.render = null;
-                    if (typeof _ === 'undefined') {
+                    if (_ === undefined) {
                         throw new Error("Underscore was not found. Please include underscore.js OR provide a custom pages.render function.");
-                    }
-                    else {
+                    } else {
                         this._compiledPagerTemplate = _.template(this.settings.pages.template);
                     }
                 }
@@ -213,9 +212,9 @@
             }
 
             if (this.settings.data) {
-                this._load(this._offset, limit)
+                this._load(this._offset, limit, this.settings.data);
             } else {
-                this._loadRemote(this._offset, limit)
+                this._loadRemote(this._offset, limit);
             }
         },
 
@@ -228,7 +227,7 @@
         },
 
         _load: function (offset, limit, data) {
-            this._evalPages(limit ? limit : data['limit'], data ? data['total'] : this._total);
+            this._evalPages(limit ? limit : data.limit, data ? data.total : this._total);
             if (!this.$pager && this._total > this._limit) {
                 this._initPager();
             }
@@ -240,7 +239,7 @@
                     items = $.extend(true, {}, this.settings.data);
                     items[key] = this.settings.data[key].slice(offset, offset + limit);
                 } else {
-                    items = this.settings.data.slice(offset, offset + limit)
+                    items = this.settings.data.slice(offset, offset + limit);
                 }
             }
 
@@ -293,7 +292,6 @@
                     if ($.isFunction(this.settings.events.loadFail)) {
                         this.settings.events.loadFail.call(this, error);
                     }
-                    console.log(error);
                 }).bind(this));
         },
 
@@ -319,7 +317,9 @@
                 pagesBefore: before,
                 pagesAfter: after,
                 totalPages: this._totalPages
-            }
+            };
+
+            this._event('beforePaginationRender', data);
 
             this.$pager.children().remove();
             if (this.settings.pages.render) {
@@ -329,7 +329,7 @@
                 }
                 this.$pager.html(this.settings.pages.render.apply(this, args));
             } else {
-                this.$pager.html(this._compiledPagerTemplate(data))
+                this.$pager.html(this._compiledPagerTemplate(data));
             }
 
             this._bindEvents();
@@ -337,6 +337,7 @@
 
         _bindEvents: function () {
             var $this = this;
+
             if (this.settings.targets.next) {
                 $(this.settings.targets.next, this.$pager.get()).each(function () {
                     $(this).click($this.forward.bind($this));
@@ -345,9 +346,19 @@
 
             if (this.settings.targets.previous) {
                 $(this.settings.targets.previous, this.$pager.get()).each(function () {
-                    $(this).click(function () {
-                        $this.back();
-                    })
+                    $(this).click($this.back.bind($this));
+                });
+            }
+
+            if (this.settings.targets.first) {
+                $(this.settings.targets.first, this.$pager.get()).each(function () {
+                    $(this).click($this.go.bind($this, 1));
+                });
+            }
+
+            if (this.settings.targets.last) {
+                $(this.settings.targets.last, this.$pager.get()).each(function () {
+                    $(this).click($this.go.bind($this, $this._totalPages));
                 });
             }
 
@@ -363,6 +374,7 @@
         },
 
         _render: function (data) {
+            this._event('beforeRender', data);
             this.$container.children().remove();
 
             if (this.settings.render) {
@@ -372,7 +384,13 @@
                 }
                 this.$container.html(this.settings.render.apply(this, args));
             } else {
-                this.$container.html(this._compiledTemplate(data))
+                this.$container.html(this._compiledTemplate(data));
+            }
+        },
+
+        _event: function (e) {
+            if ($.isFunction(this.settings.events[e])) {
+                this.settings.events[e].call(this, Array.prototype.slice.call(arguments, 1)[0]);
             }
         }
     };
@@ -380,12 +398,19 @@
     $.fn[ pluginName ] = function (options) {
         return this.each(function () {
             var plugin = $.data(this, "plugin_" + pluginName);
-            if (plugin && $.isArray(options) && $.isFunction(plugin[options[0]])) {
-                plugin[options[0]].call(plugin, options.slice(1))
+            if (plugin) {
+                var method = options, params = [];
+                if ($.isArray(options)) {
+                    method = options[0];
+                    params = options.slice(1);
+                }
+                if ($.isFunction(plugin[method])) {
+                    plugin[method].call(plugin, params);
+                }
             } else {
                 $.data(this, "plugin_" + pluginName, new Plugin(this, options));
             }
         });
     };
 
-})(jQuery, window, document);
+})(jQuery, window, document, _);
