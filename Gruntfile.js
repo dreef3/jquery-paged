@@ -53,16 +53,38 @@ module.exports = function(grunt) {
             },
             files: ['src/**/*'],
             tasks: ['default']
+        },
+
+        qunit: {
+            all: {
+                 options: {
+                          urls: [
+                                'http://localhost:8000/test/local.html'
+                          ]
+                 }
+            }
+        },
+
+        connect: {
+            server: {
+                options: {
+                    port: 8000,
+                    base: './src/'
+                }
+            }
         }
 
 	});
 
 	grunt.loadNpmTasks("grunt-contrib-concat");
-	/*grunt.loadNpmTasks("grunt-contrib-jshint");*/
+	grunt.loadNpmTasks("grunt-contrib-jshint");
+    grunt.loadNpmTasks('grunt-contrib-qunit');
+    grunt.loadNpmTasks('grunt-contrib-connect');
 	grunt.loadNpmTasks("grunt-contrib-uglify");
     grunt.loadNpmTasks('grunt-contrib-watch');
 
 	grunt.registerTask("default", ["concat", "uglify"]);
 	grunt.registerTask("travis", ["jshint"]);
+    grunt.registerTask("test", ["connect"]);
 
 };

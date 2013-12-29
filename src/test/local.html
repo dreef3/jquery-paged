@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>JQuery Paged test page</title>
+    <link rel="stylesheet" href="//code.jquery.com/qunit/qunit-1.12.0.css">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.5.2/underscore-min.js"></script>
+</head>
+<body>
+<div id="qunit"></div>
+<div id="qunit-fixture"></div>
+<div id="element"></div>
+<script src="jquery.paged.js"></script>
+<script src="//code.jquery.com/qunit/qunit-1.12.0.js"></script>
+<script type="text/html" id="test-template">
+    <ul>
+        <% for (int i = 0; i < data.length; i++) { %>
+        <li>{{data[i]}}</li>
+        <% } %>
+    </ul>
+</script>
+<script>
+    var testData = ['One', 'Two', 'Three']
+
+    test( "basic", function() {
+        $('#element').paged({
+            data: testData,
+            template: $('#test-template').html()
+        });
+
+        ok($('#element').data('plugin_paged'), 'Paged plugin wasn\'t created!');
+    });
+</script>
+</body>
+</html>

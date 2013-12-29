@@ -1,88 +1,88 @@
 ;
-(function ($, window, document, _, undefined) {
+(function ($, window, document, undefined) {
     "use strict";
     var pluginName = "paged",
         defaults = {
             // Custom rendering function. Use this to substitute default Underscore template engine.
-            render: null,
+            render:   null,
             // Default items section template. Anything passed either with data or from server is available here.
             template: "<ul><li>Nothing here yet</li></ul>",
             // Event handlers
-            events: {
-                beforeRender: null,
+            events:   {
+                beforeRender:           null,
                 beforePaginationRender: null,
                 // Called when both items and pagination are rendered
-                afterRender: null,
+                afterRender:            null,
                 // Called before sending the AJAX request. JQuery.ajax() settings object is passed here.
-                beforeLoad: null,
+                beforeLoad:             null,
                 // Called after the AJAX response is acquired. Passed data object with extras: currentPage, totalPages, isLastPage
-                afterLoad: null,
+                afterLoad:              null,
                 // Called in case of AJAX request failure. Error object is passed here.
-                loadFail: null
+                loadFail:               null
             },
             // CSS targets to bind pagination events.
-            targets: {
+            targets:  {
                 // First page button
-                first: '.paged-first',
+                first:    '.paged-first',
                 // Previous page button.
                 previous: '.paged-previous',
                 // Next page button.
-                next: '.paged-next',
+                next:     '.paged-next',
                 // Last page button
-                last: '.paged-last',
+                last:     '.paged-last',
                 // Specific page. Note: page elements must contain data-page attribute with current page number.
-                page: '.paged-page-before, .paged-page-after'
+                page:     '.paged-page-before, .paged-page-after'
             },
             // Settings for JQuery.ajax().
-            ajax: {
+            ajax:     {
                 // Underscore templating is available here with variables offset and limit.
-                url: null,
+                url:  null,
                 data: null
             },
             // Local data source. If set, would be used instead of AJAX. May be either array or contain 'root' element with name of array child.
-            data: null,
+            data:     null,
             // Pagination settings.
-            pages: {
+            pages:    {
                 // Pages to display before current.
-                before: 1,
+                before:   1,
                 // Pages to display after current.
-                after: 1,
+                after:    1,
                 // Pagination template. Passed variables: current, pagesBefore, pagesAfter, isLast, totalPages
                 template: "<ul class='paged-pager-list'>" +
-                    "<% if (current > 1) { %>" +
-                    "<li class='paged-first paged-control'><a href='#'><i class='fa fa-arrow-circle-left'></i></a></li>" +
-                    "<li class='paged-previous paged-control'><a href='#'><i class='fa fa-long-arrow-left'></i></a></li>" +
-                    "<% for(var i = pagesBefore; i > 0; i--) { %>" +
-                    "<li class='paged-page-before' data-page='<%=current - i%>'><a href='#'><%=current - i%></a></li>" +
-                    "<% } %>" +
-                    "<% } else { %>" +
-                    "<li class='paged-control'><a href='#'><i class='fa fa-dot-circle-o'></i></a></li>" +
-                    "<% } %>" +
-                    "<li class='paged-page-current'><a href='#'><%=current%></a></li>" +
-                    "<% if (!isLast) { %>" +
-                    "<% for(var i = 1; i <= pagesAfter; i++) { %>" +
-                    "<li class='paged-page-after' data-page='<%=current + i%>'><a href='#'><%=current + i%></a></li>" +
-                    "<% } %>" +
-                    "<li class='paged-next paged-control'><a href='#'><i class='fa fa-long-arrow-right'></i></a></li>" +
-                    "<li class='paged-last paged-control'><a href='#'><i class='fa fa-arrow-circle-right'></i></a></li>" +
-                    "<% } else { %>" +
-                    "<li class='paged-control'><a href='#'><i class='fa fa-dot-circle-o'></i></a></li>" +
-                    "<% } %>" +
+                              "<% if (current > 1) { %>" +
+                              "<li class='paged-first paged-control'><a href='#'><i class='fa fa-arrow-circle-left'></i></a></li>" +
+                              "<li class='paged-previous paged-control'><a href='#'><i class='fa fa-long-arrow-left'></i></a></li>" +
+                              "<% for(var i = pagesBefore; i > 0; i--) { %>" +
+                              "<li class='paged-page-before' data-page='<%=current - i%>'><a href='#'><%=current - i%></a></li>" +
+                              "<% } %>" +
+                              "<% } else { %>" +
+                              "<li class='paged-control'><a href='#'><i class='fa fa-dot-circle-o'></i></a></li>" +
+                              "<% } %>" +
+                              "<li class='paged-page-current'><a href='#'><%=current%></a></li>" +
+                              "<% if (!isLast) { %>" +
+                              "<% for(var i = 1; i <= pagesAfter; i++) { %>" +
+                              "<li class='paged-page-after' data-page='<%=current + i%>'><a href='#'><%=current + i%></a></li>" +
+                              "<% } %>" +
+                              "<li class='paged-next paged-control'><a href='#'><i class='fa fa-long-arrow-right'></i></a></li>" +
+                              "<li class='paged-last paged-control'><a href='#'><i class='fa fa-arrow-circle-right'></i></a></li>" +
+                              "<% } else { %>" +
+                              "<li class='paged-control'><a href='#'><i class='fa fa-dot-circle-o'></i></a></li>" +
+                              "<% } %>" +
                     "</ul>",
                 // Custom rendering function. Use this to substitute default Underscore template engine.
-                render: null,
+                render:   null,
                 // Custom element to hold pagination.
-                el: null,
+                el:       null,
                 // If no custom element set, position of pagination inside Paged container. Possible values: before, after.
                 position: 'after'
             },
             // Items per page. You may set this to null and return limit from server in field 'limit'
-            limit: 10,
+            limit:    10,
             // Initial offset (must be a multiple of limit)
-            offset: 0,
+            offset:   0,
             // Total amount of numbers. If not set, would be gathered from 'total' field in server's response.
             // For local data source would be computed automatically.
-            total: null
+            total:    null
         };
 
     function Plugin(element, options) {
@@ -127,12 +127,11 @@
 
             if (!this.settings.data && !this.settings.ajax.url) {
                 throw new Error('Neither data nor URL template weren\'t set!');
-            } else if (this.settings.data && (!this.settings.data.root && !$.isArray(this.settings.data))) {
-                throw new Error('Paginated data must be set as array.');
-            } else if (this.settings.ajax.url) {
+            }
+            // Remote is preferred.
+            if (this.settings.ajax.url) {
                 this._compiledUrl = _.template(this.settings.ajax.url);
             }
-
 
             var firstPage = (this._offset && this._limit) ? Math.floor(this._offset / this._limit) : 1;
             this.go(firstPage);
@@ -219,7 +218,8 @@
         },
 
         _load: function (offset, limit, data) {
-            this._evalPages(limit ? limit : data.limit, data ? data.total : this._total);
+            var total = (data && data.total) ? data.total : this._total;
+            this._evalPages(limit ? limit : data.limit, total);
             if (!this.$pager && this._total > this._limit) {
                 this._initPager();
             }
@@ -255,8 +255,8 @@
             if (this.settings.events.afterLoad) {
                 this.settings.events.afterLoad.call(this, $.extend(true, data, {
                     currentPage: this._currentPage,
-                    totalPages: this._totalPages,
-                    isLastPage: this._isLastPage
+                    totalPages:  this._totalPages,
+                    isLastPage:  this._isLastPage
                 }));
             }
         },
@@ -266,11 +266,11 @@
             var url = this._compiledUrl({offset: offset, limit: limit});
 
             var ajaxSettings = $.extend(true, {}, this.settings.ajax, {
-                url: url,
+                url:  url,
                 data: {
                     offset: offset,
-                    limit: limit,
-                    total: this._total
+                    limit:  limit,
+                    total:  this._total
                 }
             });
 
@@ -302,13 +302,12 @@
                 after = this._totalPages - this._currentPage;
             }
 
-
             var data = {
-                current: this._currentPage,
-                isLast: this._isLastPage,
+                current:     this._currentPage,
+                isLast:      this._isLastPage,
                 pagesBefore: before,
-                pagesAfter: after,
-                totalPages: this._totalPages
+                pagesAfter:  after,
+                totalPages:  this._totalPages
             };
 
             this._event('beforePaginationRender', data);
@@ -405,4 +404,4 @@
         });
     };
 
-})(jQuery, window, document, _);
+})(jQuery, window, document);
