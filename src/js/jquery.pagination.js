@@ -37,6 +37,8 @@
             },
 
             // Callbacks
+            load: null,
+            render: null
         },
 
         // JQUERY UI WIDGET OVERRIDES
@@ -44,29 +46,15 @@
             this._setOptions(this.options);
         },
 
-        _setTemplate: function () {
-            if (!this.options.template) {
-                throw new Error('Template wasn\'t set!');
-            }
-
-            if ($.isFunction(this.options.template)) {
-                this._template = this.options.template;
+        _setTemplate: function (option) {
+            var key = '_' + option;
+            if ($.isFunction(this.options[option])) {
+                this[key] = this.options[option];
             } else {
                 if (_ === undefined) {
                     throw new Error('Underscore.js wasn\'t found. It\'s a default template engine');
                 }
-                this._template = _.template(this.options.template);
-            }
-        },
-
-        _setPagesTemplate: function () {
-            if ($.isFunction(this.options.pagesTemplate)) {
-                this._pagesTemplate = this.options.pagesTemplate;
-            } else {
-                if (_ === undefined) {
-                    throw new Error('Underscore.js wasn\'t found. It\'s a default template engine');
-                }
-                this._pagesTemplate = _.template(this.options.pagesTemplate);
+                this[key] = _.template(this.options[option]);
             }
         },
 
@@ -132,6 +120,12 @@
                         valid = valid && value <= this._totalPages;
                     }
                     break;
+                case 'template':
+                    valid = !!value;
+                    if (!valid) {
+                        throw new Error('Template wasn\'t set!');
+                    }
+                    break;
             }
             return valid;
         },
@@ -143,10 +137,10 @@
             this._super(key, value);
             switch (key) {
                 case 'template':
-                    this._setTemplate();
+                    this._setTemplate('template');
                     break;
                 case 'pagesTemplate':
-                    this._setPagesTemplate();
+                    this._setTemplate('pagesTemplate');
                     break;
                 case 'page':
                     this._setPage();
@@ -227,6 +221,9 @@
                 this._currentData[ak] = items.slice(this._offset, this._offset + this._limit);
                 this._setPaginationData(this._currentData);
             }
+
+            // Let user change the data before rendering
+            this._trigger('load', this._currentData);
             return true;
         },
 
@@ -360,6 +357,8 @@
                     });
                 }
                 this._bindTargets();
+
+                this._trigger('render', null, {element: this.element, data: $.extend(true, {}, this._currentData)});
             }
         }
     });
