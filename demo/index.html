@@ -1,47 +1,35 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>jQuery Boilerplate</title>
+    <title>jQuery Paged</title>
     <link href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css" rel="stylesheet">
-    <link rel="stylesheet/less" type="text/css" href="paged.less"/>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/less.js/1.5.0/less.min.js"></script>
-    <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="jquery.pagination.list.css"/>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.5.2/underscore-min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/jquery-mockjax/1.5.3/jquery.mockjax.js"></script>
     <script src="fakedata.js"></script>
-    <script src="jquery.paged.js"></script>
+    <script src="jquery.pagination.js"></script>
+    <script src="jquery.pagination.list.js"></script>
 </head>
 <body>
+<h3>Top 100 books on Project Gutenberg:</h3>
 
-<div class="demo-simple">
-
-</div>
-
-<script>
-    $(function () {
-        var template = '<ul class="paged-items-list">' +
-                '<% _.each(meetings, function(meeting) { %>' +
-                '<li><i class="fa fa-check-square-o"></i><%=meeting.name%> - <%=meeting.time%></li>' +
-                '<% }); %>' +
-                '</ul>';
-
-        $('#element').paged({
-            ajax: {
-                url: 'http://localhost:8282/booking/all/',
-                fake: true
-            },
-            template: template
-        });
-
-        $('#local-data').paged({
-            data: {
-                root: 'meetings',
-                meetings: fakeData
-            },
-            template: template
-        });
-    });
+<div id="top100"></div>
+<script type="text/html" id="top100-template">
+    <ul>
+        <% for (var i = 0; i < data.length; i++) { %>
+        <li>
+            <span><%=data[i].title%></span>
+            by <span><%=data[i].author%></span>
+            <span><%=data[i].year%></span>
+        </li>
+        <% } %>
+    </ul>
+    <div class="pg-pager"></div>
 </script>
-
+<script>
+    $('#top100').pagination({url: '/top100', template: $('#top100-template').html()});
+</script>
 </body>
 </html>

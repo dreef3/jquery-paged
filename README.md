@@ -194,3 +194,56 @@ $(function () {
     });
 });
 ```
+
+Design
+======
+
+Pagination
+----------
+Template has to contain a container with class defined in `$.paged.defaults.css.pages`.
+
+If `$.paged.defaults.pages.lookup` is set to true and no such container was found then a lookup would be performed:
+1. Lookup in the whole page.
+2. If still wasn't found, append to the end of the template.
+
+If container was found but empty (that is, doesn't contain any child elements, but may contain text), a default pagination
+template would be inserted there.
+
+Pagination events will be bound to elements inside the container with classes defined in `$.paged.defaults.css.targets`, if any.
+
+How data is paginated
+---------------------
+The data may be either passed with `$.paged.defaults.data` or retrieved from remote source specified by `$.paged.defaults.url` (`$.paged.defaults.ajax.url`).
+
+If no data source was set or it's failed to retrieve the data via AJAX, the container defined by `$.paged.defaults.css.error` will be shown.
+
+Various cases how data would be handled once it's available:
+1. Plain array: copied, sliced, passed wrapped in `$.paged.defaults.keys.array`.
+2. Object. First searched for the array. Next the whole object would be copied and array property would be substituted with sliced copy.
+2.2. Use a property with key `$.paged.defaults.keys.root` if it's an array.
+2.3. If the value of property with key `$.paged.defaults.keys.root` isn't an array:
+2.3.1. Use the value of `obj[obj[$.paged.defaults.keys.root]]` if it's present and contains the array.
+2.3.2. Look up for a single array property and use it. If there's no such property or there's more than one of them, an error occurs (handled as above).
+
+Most of the time you need to specify your data's root in `$.paged.defaults.keys.root` and that's it.
+
+Limit, offset, total
+--------------------
+Each page contains a portion of data starting from `offset` with `limit` count.
+These values are set as `$.paged.defaults.limit`, `$.paged.defaults.offset`.
+
+Total amount of items may be set by several exclusive ways:
+1. As `$.paged.defaults.total`.
+2. In data object under key `$.paged.defaults.keys.total`.
+3. Assumed from data source array size.
+
+If it was set as plugin option and actual data source contains less items,
+then the value will be corrected.
+
+If it was set as a property of data object retrieved by AJAX and the size of array is
+less than passed total amount of items, only `limit` count of items would be displayed
+and a separate request would be performed for the each subsequent portion of items.
+
+Changing options after initialization
+-------------------------------------
+

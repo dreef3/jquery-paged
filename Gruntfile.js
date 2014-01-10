@@ -17,20 +17,9 @@ module.exports = function(grunt) {
 				" */\n"
 		},
 
-		// Concat definitions
-		concat: {
-			dist: {
-				src: ["src/jquery.paged.js"],
-				dest: "dist/jquery.paged.js"
-			},
-			options: {
-				banner: "<%= meta.banner %>"
-			}
-		},
-
 		// Lint definitions
 		jshint: {
-			files: ["src/jquery.paged.js"],
+			files: ["src/**/*.js"],
 			options: {
 				jshintrc: ".jshintrc"
 			}
@@ -39,8 +28,12 @@ module.exports = function(grunt) {
 		// Minify definitions
 		uglify: {
 			my_target: {
-				src: ["dist/jquery.paged.js"],
-				dest: "dist/jquery.paged.min.js"
+                files: [{
+                    expand: true,
+                    cwd: 'src/js',
+                    src: '**/*.js',
+                    dest: 'dest/js'
+                }]
 			},
 			options: {
 				banner: "<%= meta.banner %>"
@@ -53,38 +46,14 @@ module.exports = function(grunt) {
             },
             files: ['src/**/*'],
             tasks: ['default']
-        },
-
-        qunit: {
-            all: {
-                 options: {
-                          urls: [
-                                'http://localhost:8000/test/local.html'
-                          ]
-                 }
-            }
-        },
-
-        connect: {
-            server: {
-                options: {
-                    port: 8000,
-                    base: './src/'
-                }
-            }
         }
-
 	});
 
-	grunt.loadNpmTasks("grunt-contrib-concat");
 	grunt.loadNpmTasks("grunt-contrib-jshint");
-    grunt.loadNpmTasks('grunt-contrib-qunit');
-    grunt.loadNpmTasks('grunt-contrib-connect');
 	grunt.loadNpmTasks("grunt-contrib-uglify");
     grunt.loadNpmTasks('grunt-contrib-watch');
 
-	grunt.registerTask("default", ["concat", "uglify"]);
+	grunt.registerTask("default", ["uglify"]);
 	grunt.registerTask("travis", ["jshint"]);
-    grunt.registerTask("test", ["connect"]);
 
 };
