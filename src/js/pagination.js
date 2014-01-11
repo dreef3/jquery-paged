@@ -12,7 +12,8 @@
             url: null,
             data: null,
             pages: {
-                attr: 'data-page'
+                attr: 'data-page',
+                total: 5
             },
             css: {
                 items: 'pg-items',
@@ -38,19 +39,23 @@
 
             // Callbacks
             load: null,
-            render: null
+            paginated: null,
+            render: null,
+            ajax: null
         },
 
         // JQUERY UI WIDGET OVERRIDES
         _create: function () {
+            this._initComplete = false;
             this._setOptions(this.options);
+            this._initComplete = true;
         },
 
         _setTemplate: function (option) {
             var key = '_' + option;
             if ($.isFunction(this.options[option])) {
                 this[key] = this.options[option];
-            } else {
+            } else if (this.options[option]) {
                 if (_ === undefined) {
                     throw new Error('Underscore.js wasn\'t found. It\'s a default template engine');
                 }
@@ -95,6 +100,9 @@
                 if (this._total % this._limit > 0) {
                     this._totalPages++;
                 }
+                if (this.options.pages.total > this._totalPages) {
+                    this.options.pages.total = this._totalPages;
+                }
                 this._limit = limit;
                 this._offset = offset;
             }
@@ -103,7 +111,9 @@
         _setDataSource: function (loadFn) {
             this._reset();
             this._load = loadFn;
-            this._load();
+            if (this._initComplete) {
+                this._load();
+            }
         },
 
         _validateOption: function (key, value) {
@@ -112,12 +122,11 @@
                 case 'limit':
                 case 'offset':
                 case 'total':
-                case 'page':
                     valid = $.isNumeric(value) && value > 0;
                     break;
                 case 'page':
                     if (this._totalPages) {
-                        valid = valid && value <= this._totalPages;
+                        valid = $.isNumeric(value) && value > 0 && value <= this._totalPages;
                     }
                     break;
                 case 'template':
@@ -188,16 +197,18 @@
         _loadRemote: function () {
             var params = {
                 url: this.options.url,
-                method: 'post',
                 type: 'POST',
                 dataType: 'json',
                 data: {}
             };
             params.data[this.options.keys.offset] = this._offset;
             params.data[this.options.keys.limit] = this._limit;
+            // Let user to change the ajax params before request
+            this._trigger('ajax', null, params);
 
             var $this = this;
             $.ajax(params).done(function (response) {
+                $this._trigger('load', null, response);
                 $this._saveData(response);
                 $this.refresh();
 
@@ -223,7 +234,7 @@
             }
 
             // Let user change the data before rendering
-            this._trigger('load', this._currentData);
+            this._trigger('paginated', null,  this._currentData);
             return true;
         },
 
@@ -234,6 +245,21 @@
                 pages: this.options.pages,
                 css: this.options.css
             };
+
+            var p = data[this.options.keys.templateExtra].pages;
+            p.before = Math.floor(p.total / 2);
+            if (this._currentPage - p.before <= 0) {
+                p.before = this._currentPage - 1;
+            }
+            p.after = p.total - p.before - 1;
+            if (this._totalPages - this._currentPage < p.after) {
+                p.after = this._totalPages - this._currentPage;
+            }
+            if (p.after + p.before + 1 < p.total) {
+                p.before = p.total - p.after - 1;
+            }
+            p.first = this._currentPage === 1;
+            p.last = this._currentPage === this._totalPages;
         },
 
         _createTargets: function () {

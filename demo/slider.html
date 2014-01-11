@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>jQuery Paged</title>
+    <link href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet/less" type="text/css" href="slider.less"/>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/less.js/1.6.0/less.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.5.2/underscore-min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery-mockjax/1.5.3/jquery.mockjax.js"></script>
+    <script src="fakedata.js"></script>
+    <script src="../src/js/pagination.js"></script>
+    <script src="../src/js/pagination.slider.js"></script>
+</head>
+<body>
+<h3>Simple image slider:</h3>
+
+<div id="slider"></div>
+<script>
+    $('#slider').pagination({
+        url: 'http://api.flickr.com/services/rest',
+        pages: { urlKey: 'url_l', thumbUrlKey: 'url_s' },
+        ajax: function () {
+            var params = arguments[1];
+            params.type = 'GET';
+            var flickrParams = {
+                method: 'flickr.people.getPublicPhotos',
+                api_key: 'd10d88b7574ba623385d65a5607bc763',
+                user_id: '35972709@N03',
+                format: 'json',
+                nojsoncallback: 1
+            };
+            $.extend(params.data, flickrParams);
+
+        },
+        load: function (e, rsp) {
+            rsp.data = rsp.photos.photo;
+            $.each(rsp.data, function(k, v) {
+                v.url_l = 'http://farm' + v.farm + '.staticflickr.com/'+ v.server+'/'+ v.id+'_'+ v.secret+'_c.jpg';
+                v.url_s = 'http://farm' + v.farm + '.staticflickr.com/'+ v.server+'/'+ v.id+'_'+ v.secret+'_s.jpg';
+            });
+        }
+    });
+</script>
+</body>
+</html>

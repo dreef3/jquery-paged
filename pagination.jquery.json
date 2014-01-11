@@ -1,14 +1,14 @@
 {
-	"name": "paged",
-	"title": "jQuery Paged",
-	"description": "JQuery plugin for paged output of data with extra goodies.",
+	"name": "pagination",
+	"title": "jQuery Pagination",
+	"description": "JQuery plugin for paginated output of data with extra goodies.",
 	"keywords": [
 		"jquery",
 		"paginate",
-        "paged",
+        "pagination",
 		"plugins"
 	],
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"author": {
 		"name": "Andrey Ermakov",
 		"email": "dreef3@gmail.com",
