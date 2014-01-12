@@ -17,10 +17,18 @@
 <h3>Simple image slider:</h3>
 
 <div id="slider"></div>
+<div id="slider2"></div>
 <script>
-    $('#slider').pagination({
+    var onLoad = function (rsp, bigSize, thumbSize) {
+        $.each(rsp.photos.photo, function (k, v) {
+            v.url_l = 'http://farm' + v.farm + '.staticflickr.com/' + v.server + '/' + v.id + '_' + v.secret + '_' + bigSize + '.jpg';
+            v.url_s = 'http://farm' + v.farm + '.staticflickr.com/' + v.server + '/' + v.id + '_' + v.secret + '_' + thumbSize + '.jpg';
+        });
+    }
+    var config = {
         url: 'http://api.flickr.com/services/rest',
         pages: { urlKey: 'url_l', thumbUrlKey: 'url_s' },
+        keys: {root: 'photos.photo'},
         ajax: function () {
             var params = arguments[1];
             params.type = 'GET';
@@ -34,12 +42,16 @@
             $.extend(params.data, flickrParams);
 
         },
-        load: function (e, rsp) {
-            rsp.data = rsp.photos.photo;
-            $.each(rsp.data, function(k, v) {
-                v.url_l = 'http://farm' + v.farm + '.staticflickr.com/'+ v.server+'/'+ v.id+'_'+ v.secret+'_c.jpg';
-                v.url_s = 'http://farm' + v.farm + '.staticflickr.com/'+ v.server+'/'+ v.id+'_'+ v.secret+'_s.jpg';
-            });
+        load: function(e, response) {
+            onLoad(response, 'c', 's');
+        }
+    };
+
+    $('#slider').pagination(config);
+    $('#slider2').pagination(config, {
+        pages: {total: 8},
+        load: function (e, response) {
+            onLoad(response, 'z', 's');
         }
     });
 </script>

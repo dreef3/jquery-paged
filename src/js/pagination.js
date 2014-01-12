@@ -1,6 +1,39 @@
 ;
 (function ($) {
     'use strict';
+
+    function getNested(obj, key) {
+        key = key.split('.');
+        for (var i = 0; i < key.length; i++) {
+            if (!obj) {
+                return null;
+            }
+            obj = obj[key[i]];
+        }
+        return obj;
+    }
+
+    function setNested(obj, key, val) {
+        key = key.split('.');
+        var k;
+        while (key.length > 1 && (k = key.shift())) {
+            obj = obj[k] || (obj[k] = {});
+        }
+        obj[key.shift()] = val;
+    }
+
+    function deleteNested(obj, key) {
+        key = key.split('.');
+        var k;
+        while (key.length > 1 && (k = key.shift())) {
+            obj = obj[k];
+            if (!obj) {
+                return;
+            }
+        }
+        delete obj[key.shift()];
+    }
+
     $.widget('drf.pagination', {
         options: {
             page: 1,
@@ -27,14 +60,18 @@
                 }
             },
             keys: {
-                array: 'data',
                 root: 'root',
                 total: 'total',
                 limit: 'limit',
-                offset: 'offset',
+                offset: 'offset'
+            },
+            templateKeys: {
+                array: 'data',
                 totalPages: 'total',
                 currentPage: 'current',
-                templateExtra: 'extra'
+                extra: 'extra',
+                limit: 'limit',
+                offset: 'offset'
             },
 
             // Callbacks
@@ -65,24 +102,24 @@
 
         _setTotal: function () {
             var tk = this.options.keys.total;
-            var ak = this.options.keys.array;
+            var rk = this.options.keys.root;
             this._total = this.options.total;
             if (this._data) {
-                if (this._total && this._data[ak].length < this._total) {
-                    this._total = this._data[ak].length;
+                var data = getNested(this._data, rk);
+                if (this._total && data.length < this._total) {
+                    this._total = data.length;
                 } else if (this._data[tk]) {
                     this._total = this._data[tk];
                 } else {
-                    this._total = this._data[ak].length;
+                    this._total = data.length;
                 }
             }
         },
 
         _setPage: function () {
+            this._limit = this.options.limit;
+            this._offset = this.options.offset + this._limit * this.options.page;
             if (!this._total) {
-                // First time, nothing was set yet.
-                this._limit = limit;
-                this._offset = offset;
                 return;
             }
 
@@ -122,7 +159,7 @@
                 case 'limit':
                 case 'offset':
                 case 'total':
-                    valid = $.isNumeric(value) && value > 0;
+                    valid = $.isNumeric(value) && value >= 0;
                     break;
                 case 'page':
                     if (this._totalPages) {
@@ -218,8 +255,10 @@
         },
 
         _setCurrentData: function () {
-            var ak = this.options.keys.array;
-            var items = this._data ? this._data[ak] : null;
+            var keys = this.options.templateKeys,
+                rk = this.options.keys.root,
+                items = getNested(this._data, rk),
+                data = {};
 
             this._setTotal();
             this._setPage();
@@ -227,26 +266,33 @@
                 this._load();
                 return false;
             } else {
-                // TODO Don't copy array property
-                this._currentData = $.extend(true, {}, this._data);
-                this._currentData[ak] = items.slice(this._offset, this._offset + this._limit);
-                this._setPaginationData(this._currentData);
+                $.extend(true, data, this._data);
+                this._setPaginationData(data);
+                var pages = data[keys.extra].pages,
+                    start = this._offset - pages.before * this._limit,
+                    end = start + this._limit * (pages.before + pages.after + 1);
+                data[keys.array] = items.slice(start, end);
+                data[keys.offset] = pages.before * this._limit;
+                data[keys.limit] = this._limit;
+                deleteNested(data, rk);
             }
 
             // Let user change the data before rendering
-            this._trigger('paginated', null,  this._currentData);
+            this._trigger('paginated', null, data);
+            this._currentData = data;
             return true;
         },
 
         _setPaginationData: function (data) {
-            data[this.options.keys.currentPage] = this._currentPage;
-            data[this.options.keys.totalPages] = this._totalPages;
-            data[this.options.keys.templateExtra] = {
+            var keys = this.options.templateKeys;
+            data[keys.currentPage] = this._currentPage;
+            data[keys.totalPages] = this._totalPages;
+            data[keys.extra] = {
                 pages: this.options.pages,
                 css: this.options.css
             };
 
-            var p = data[this.options.keys.templateExtra].pages;
+            var p = data[keys.extra].pages;
             p.before = Math.floor(p.total / 2);
             if (this._currentPage - p.before <= 0) {
                 p.before = this._currentPage - 1;
@@ -258,6 +304,7 @@
             if (p.after + p.before + 1 < p.total) {
                 p.before = p.total - p.after - 1;
             }
+
             p.first = this._currentPage === 1;
             p.last = this._currentPage === this._totalPages;
         },
@@ -274,10 +321,14 @@
         _bindTargets: function () {
             var targets = this._createTargets();
             var $this = this;
+
             $.each(targets, function (t, fn) {
                 $('.' + t).each(function () {
                     var $el = $(this);
-                    $el.click(fn.bind($this, $el.attr($this.options.pages.attr)));
+                    $el.click(function(e) {
+                        e.preventDefault();
+                        fn.call($this, $el.attr($this.options.pages.attr))
+                    });
                 });
             });
         },
@@ -286,51 +337,50 @@
             if ($.isArray(rawData)) {
                 this._saveArray(rawData);
             } else {
-                var key = this.options.keys.array;
-                if (rawData && this._data &&
-                    $.isArray(rawData[key]) &&
-                    $.isArray(this._data[key])) {
-                    this._saveToExisting(rawData);
+                var key = this.options.keys.root;
+                if (key && rawData && this._data &&
+                    $.isArray(getNested(rawData, key)) &&
+                    $.isArray(getNested(this._data, key))) {
+                    this._saveExistingObject(rawData);
                 } else {
                     this._saveNewObject(rawData);
                 }
             }
         },
 
-        _saveToExisting: function (rawData) {
-            var k = this.options.keys.array;
-            var ok = this.options.keys.offset;
-            var lk = this.options.keys.limit;
-            var limit = this._limit;
-            if ($.isNumeric(rawData[lk])) {
-                limit = parseInt(rawData[lk], 10);
+        _saveExistingObject: function (rawData) {
+            var k = this.options.keys.root,
+                ok = this.options.keys.offset,
+                lk = this.options.keys.limit,
+                limit = this._limit,
+                offset = this._offset;
+
+            if ($.isNumeric(getNested(rawData, lk))) {
+                limit = parseInt(getNested(rawData, lk), 10);
             }
-            var offset = this._offset;
-            if ($.isNumeric(rawData[ok])) {
-                offset = parseInt(rawData[ok], 10);
+            if ($.isNumeric(getNested(rawData, ok))) {
+                offset = parseInt(getNested(rawData, ok), 10);
             }
 
-            var args = [offset, limit].concat(rawData[k]);
-            Array.prototype.splice.apply(this._data[k], args);
+            var args = [offset, limit].concat(getNested(rawData, k));
+            Array.prototype.splice.apply(getNested(this._data, k), args);
         },
 
         _saveArray: function (rawData) {
-            var ak = this.options.keys.array;
+            var rk = this.options.keys.root;
             this._data = this._data || {};
-            this._data[ak] = this._data[ak] || [];
+            setNested(this._data, rk, getNested(this._data, rk) || []);
+            var data = getNested(this._data, rk);
             for (var i = 0; i < rawData.length; i++) {
-                this._data[ak].push(rawData[i]);
+                data.push(rawData[i]);
             }
         },
 
         _saveNewObject: function (rawData) {
-            var rk = this.options.keys.root;
-            var key = null;
-            if ($.isArray(rawData[rk])) {
-                key = rk;
-            } else if (typeof rawData[rk] === 'string' && $.isArray(rawData[rawData[rk]])) {
-                key = rawData[rk];
-            } else {
+            var key = this.options.keys.root;
+
+            var items = getNested(rawData, key);
+            if (!$.isArray(items)) {
                 $.each(rawData, function (k, v) {
                     if (key) {
                         key = null;
@@ -343,7 +393,7 @@
             }
 
             if (key) {
-                this.options.keys.array = key;
+                this.options.keys.root = key;
                 this._data = $.extend(true, {}, rawData);
             } else {
                 // TODO Handle error.

@@ -3,7 +3,7 @@
     'use strict';
     $.drf.pagination.prototype.options.template =
         '<div class="<%=extra.css.items%>">' +
-        '<img src="<%=data[current - 1][extra.pages.urlKey]%>"/>' +
+        '<img src="<%=data[extra.pages.before][extra.pages.urlKey]%>"/>' +
         '</div>' +
         '<div class="<%=extra.css.pages%>"></div>';
     $.drf.pagination.prototype.options.pagesTemplate =
@@ -14,17 +14,17 @@
 
             '<% for(var i = extra.pages.before; i > 0; i--) { %>' +
             '<li class="<%=extra.css.targets.pageBefore%>" <%=extra.pages.attr%>="<%=current - i%>">' +
-                '<a href="#"><img src="<%=data[current - i][extra.pages.thumbUrlKey]%>"/></a>' +
+                '<a href="#"><img src="<%=data[extra.pages.before - i][extra.pages.thumbUrlKey]%>"/></a>' +
             '</li>' +
             '<% } %>' +
 
             '<li class="<%=extra.css.targets.pageCurrent%>">' +
-            '   <img src="<%=data[current - 1][extra.pages.thumbUrlKey]%>"/>' +
+            '   <img src="<%=data[extra.pages.before][extra.pages.thumbUrlKey]%>"/>' +
             '</li>' +
 
             '<% for(var i = 1; i <= extra.pages.after; i++) { %>' +
             '<li class="<%=extra.css.targets.pageAfter%>" <%=extra.pages.attr%>="<%=current + i%>">' +
-            '<a href="#"><img src="<%=data[current + i][extra.pages.thumbUrlKey]%>"/></a>' +
+            '<a href="#"><img src="<%=data[extra.pages.before + i][extra.pages.thumbUrlKey]%>"/></a>' +
             '</li>' +
             '<% } %>' +
 

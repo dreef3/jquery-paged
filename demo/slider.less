@@ -16,15 +16,7 @@
 
         li {
             display: inline-block;
-            margin:  10px;
             text-align: center;
-            height: 70px;
-
-            &.pg-page-current, &.pg-page-after, &.pg-page-before {
-                width: 70px;
-                overflow: hidden;
-                background: #eee;
-            }
         }
 
         &.pg-pager-first {
@@ -35,6 +27,58 @@
         &.pg-pager-last {
             .pg-next {
                 display: none;
+            }
+        }
+    }
+}
+
+#slider {
+    .pg-page-current, .pg-page-after, .pg-page-before {
+        margin: 0 10px;
+        width: 70px;
+        overflow: hidden;
+        background: #eee;
+    }
+}
+
+#slider2 {
+    .pg-pager, .pg-items {
+        display: inline-block;
+        height: 480px;
+        vertical-align: top;
+    }
+
+    .pg-items {
+        width: 640px;
+        text-align: center;
+
+        img {
+            display: inline-block;
+            vertical-align: top;
+            height: 100%;
+        }
+    }
+    .pg-pager {
+        width: 250px;
+
+        .pg-pager-list {
+            margin: 0;
+            padding: 0;
+
+            .pg-pager-control {
+                display: none;
+            }
+
+            .pg-page-current, .pg-page-after, .pg-page-before {
+                width: 120px;
+                height: 120px;
+                overflow: hidden;
+                margin-bottom: -4px;
+
+                img {
+                    width: 100%;
+                    height: 100%;
+                }
             }
         }
     }

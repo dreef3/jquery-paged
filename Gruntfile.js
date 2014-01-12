@@ -27,14 +27,12 @@ module.exports = function(grunt) {
 
 		// Minify definitions
 		uglify: {
-			production: {
-                files: [{
-                    expand: true,
-                    cwd: "src/js",
-                    src: "**/*.js",
-                    dest: "dist/js",
-                    ext: ".min.js"
-                }]
+			minimized: {
+                files: {
+                    'dist/js/pagination.min.js': 'src/js/pagination.js',
+                    'dist/js/pagination.list.min.js': 'src/js/pagination.list.js',
+                    'dist/js/pagination.slider.min.js': 'src/js/pagination.slider.js'
+                }
 			},
 			options: {
 				banner: "<%= meta.banner %>"

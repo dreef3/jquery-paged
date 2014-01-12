@@ -18,7 +18,7 @@
 <div id="top100"></div>
 <script type="text/html" id="top100-template">
     <ul>
-        <% for (var i = 0; i < data.length; i++) { %>
+        <% for (var i = offset; i < offset + limit; i++) { %>
         <li>
             <span><%=data[i].title%></span>
             by <span><%=data[i].author%></span>
