@@ -118,7 +118,7 @@
 
         _setPage: function () {
             this._limit = this.options.limit;
-            this._offset = this.options.offset + this._limit * this.options.page;
+            this._offset = this.options.offset + this._limit * (this.options.page - 1);
             if (!this._total) {
                 return;
             }

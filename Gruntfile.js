@@ -29,7 +29,7 @@ module.exports = function(grunt) {
 		uglify: {
 			minimized: {
                 files: {
-                    'dist/js/pagination.min.js': 'src/js/pagination.js',
+                    'dist/js/pagination.min.js': ['src/js/jquery-ui-widget.js', 'src/js/pagination.js'],
                     'dist/js/pagination.list.min.js': 'src/js/pagination.list.js',
                     'dist/js/pagination.slider.min.js': 'src/js/pagination.slider.js'
                 }
