@@ -325,7 +325,7 @@
             $.each(targets, function (t, fn) {
                 $('.' + t).each(function () {
                     var $el = $(this);
-                    $el.click(function(e) {
+                    $el.click(function (e) {
                         e.preventDefault();
                         fn.call($this, $el.attr($this.options.pages.attr))
                     });
@@ -334,7 +334,10 @@
         },
 
         _saveData: function (rawData) {
-            if ($.isArray(rawData)) {
+            if (!rawData) {
+                // TODO Error handling
+                throw new Error('Failed to retrieve data');
+            } else if ($.isArray(rawData)) {
                 this._saveArray(rawData);
             } else {
                 var key = this.options.keys.root;
@@ -349,7 +352,7 @@
         },
 
         _saveExistingObject: function (rawData) {
-            var k = this.options.keys.root,
+            var rk = this.options.keys.root,
                 ok = this.options.keys.offset,
                 lk = this.options.keys.limit,
                 limit = this._limit,
@@ -362,8 +365,8 @@
                 offset = parseInt(getNested(rawData, ok), 10);
             }
 
-            var args = [offset, limit].concat(getNested(rawData, k));
-            Array.prototype.splice.apply(getNested(this._data, k), args);
+            var args = [offset, limit].concat(getNested(rawData, rk));
+            Array.prototype.splice.apply(getNested(this._data, rk), args);
         },
 
         _saveArray: function (rawData) {
@@ -371,9 +374,9 @@
             this._data = this._data || {};
             setNested(this._data, rk, getNested(this._data, rk) || []);
             var data = getNested(this._data, rk);
-            for (var i = 0; i < rawData.length; i++) {
-                data.push(rawData[i]);
-            }
+            // Let's pretend smart
+            var limit = rawData.length > this._limit ? rawData.length: this._limit;
+            data.splice([this._offset, limit].concat(rawData));
         },
 
         _saveNewObject: function (rawData) {
@@ -420,6 +423,10 @@
 
         next: function () {
             this.forward();
+        },
+
+        clear: function () {
+            this._data = null;
         },
 
         refresh: function () {
